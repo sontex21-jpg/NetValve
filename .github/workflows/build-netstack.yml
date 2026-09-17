@@ -45,6 +45,13 @@ jobs:
             "ndk;27.2.12479018"
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
+      - name: Register gomobile tools
+        working-directory: netstack
+        run: |
+          go get -tool golang.org/x/mobile/cmd/gomobile@latest
+          go get -tool golang.org/x/mobile/cmd/gobind@latest
+          go mod tidy
+
       - name: Build gVisor netstack AAR
         run: |
           chmod +x netstack/build-aar.sh
