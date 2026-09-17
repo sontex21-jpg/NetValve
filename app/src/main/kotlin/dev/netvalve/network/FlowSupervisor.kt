@@ -63,7 +63,6 @@ class FlowSupervisor(
         val uid = uidResolver.resolve(ctx)
 
         val verdict = if (paused() || !ruleEngine.isControlled(uid)) {
-            // Paused or not-controlled: relay unshaped so connectivity is preserved.
             FlowVerdict(
                 blocked = false,
                 downloadBytesPerSec = null,
@@ -416,10 +415,12 @@ class FlowSupervisor(
                             upstream.receive()
                                 ?: break
 
-                        throttleManager.pace(
-                            downBucket,
-                            data.size.toLong(),
-                        )
+                        if (downBucket != null) {
+                            throttleManager.pace(
+                                downBucket,
+                                data.size.toLong(),
+                            )
+                        }
 
                         appSide.send(data)
 
@@ -463,4 +464,9 @@ class FlowSupervisor(
         private const val RELAY_BUFFER = 16 * 1024
 
         private const val UDP_QUEUE_BYTES =
-            256
+            256 * 1024L
+
+        private const val UDP_IDLE_TIMEOUT_MILLIS =
+            30_000
+    }
+}
