@@ -112,6 +112,9 @@ class FlowSupervisor(
             return
         }
 
+        val configuredUploadRate =
+            verdict.uploadBytesPerSec
+
         val upBucket =
             throttleManager.bucketFor(
                 uid,
@@ -147,11 +150,37 @@ class FlowSupervisor(
                             n.toLong(),
                         )
 
+                        /*
+                         * Measure the real protected socket write path.
+                         *
+                         * This is NOT a true RTT measurement.
+                         * It is a local socket write/flush duration used by
+                         * ThrottleManager as a conservative queue-pressure
+                         * signal for variable LTE/5G links.
+                         */
+                        val writeStarted =
+                            System.nanoTime()
+
                         upstream.write(
                             buf,
                             0,
                             n,
                         )
+
+                        val writeNanos =
+                            System.nanoTime() -
+                                writeStarted
+
+                        if (
+                            configuredUploadRate != null
+                        ) {
+                            throttleManager.observeUploadWrite(
+                                uid = uid,
+                                configuredRateBytesPerSec =
+                                    configuredUploadRate,
+                                writeNanos = writeNanos,
+                            )
+                        }
 
                         stats.recordUpload(
                             uid,
@@ -328,6 +357,13 @@ class FlowSupervisor(
                 )
             }
 
+        val configuredUploadRate =
+            if (dnsExempt) {
+                null
+            } else {
+                verdict.uploadBytesPerSec
+            }
+
         val egressQueue =
             PacingQueue<ByteArray>(
                 UDP_QUEUE_BYTES,
@@ -348,7 +384,25 @@ class FlowSupervisor(
                         }
 
                         if (upBucket == null) {
+                            val sendStarted =
+                                System.nanoTime()
+
                             upstream.send(dg)
+
+                            val sendNanos =
+                                System.nanoTime() -
+                                    sendStarted
+
+                            if (
+                                configuredUploadRate != null
+                            ) {
+                                throttleManager.observeUploadWrite(
+                                    uid = uid,
+                                    configuredRateBytesPerSec =
+                                        configuredUploadRate,
+                                    writeNanos = sendNanos,
+                                )
+                            }
 
                             stats.recordUpload(
                                 uid,
@@ -391,7 +445,25 @@ class FlowSupervisor(
                                 dg.size.toLong(),
                             )
 
+                            val sendStarted =
+                                System.nanoTime()
+
                             upstream.send(dg)
+
+                            val sendNanos =
+                                System.nanoTime() -
+                                    sendStarted
+
+                            if (
+                                configuredUploadRate != null
+                            ) {
+                                throttleManager.observeUploadWrite(
+                                    uid = uid,
+                                    configuredRateBytesPerSec =
+                                        configuredUploadRate,
+                                    writeNanos = sendNanos,
+                                )
+                            }
 
                             stats.recordUpload(
                                 uid,
