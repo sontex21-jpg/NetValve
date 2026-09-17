@@ -2,39 +2,73 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network -->
+    <!-- ========================================================= -->
+    <!-- Package visibility                                        -->
+    <!-- Allows NetValve to discover launchable user applications -->
+    <!-- such as Chrome, Brave, etc.                              -->
+    <!-- ========================================================= -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <!-- ========================================================= -->
+    <!-- Network                                                    -->
+    <!-- ========================================================= -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Notifications -->
+    <!-- ========================================================= -->
+    <!-- Notifications                                              -->
+    <!-- ========================================================= -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Foreground service -->
+    <!-- ========================================================= -->
+    <!-- Foreground service                                         -->
+    <!-- ========================================================= -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- Usage Access -->
+    <!-- ========================================================= -->
+    <!-- Usage Access                                                -->
+    <!-- Granted by the user through Android Settings              -->
+    <!-- ========================================================= -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
-    <!-- Battery optimization exemption -->
+    <!-- ========================================================= -->
+    <!-- Battery optimization exemption                              -->
+    <!-- ========================================================= -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- ========================================================= -->
+    <!-- Application                                                 -->
+    <!-- ========================================================= -->
     <application
         android:name=".NetValveApp"
         android:allowBackup="false"
         android:label="NetValve"
         android:supportsRtl="true">
 
+        <!-- ===================================================== -->
+        <!-- Main Activity                                           -->
+        <!-- ===================================================== -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
 
+        <!-- ===================================================== -->
+        <!-- VPN / Traffic shaping service                           -->
+        <!-- ===================================================== -->
         <service
             android:name=".service.NetValveVpnService"
             android:exported="false"
@@ -48,6 +82,7 @@
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
+
         </service>
 
     </application>
