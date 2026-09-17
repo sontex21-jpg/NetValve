@@ -1,0 +1,62 @@
+name: Build NetValve Netstack ARM64 APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-netstack:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK and NDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - name: Build gVisor netstack AAR
+        run: |
+          chmod +x netstack/build-aar.sh
+          cd netstack
+          ./build-aar.sh arm64
+
+      - name: Build production ARM64 APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug -Pnetvalve.netstack=true --no-daemon
+
+      - name: Verify APK
+        run: |
+          test -f app/build/outputs/apk/debug/app-netstack-arm64-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-netstack-arm64-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetValve-netstack-arm64-debug
+          path: app/build/outputs/apk/debug/app-netstack-arm64-debug.apk
+          if-no-files-found: error
